@@ -1,0 +1,52 @@
+
+//Bottom click
+
+private ArrayList<Rectangle> Levels;
+private Rectangle selectedlevel;
+
+public void setuplevels() {
+    levels = new ArrayList<>();
+    // Add some example bottoms
+    levels.add(new Rectangle(50, 100, 100, 50));  // x, y, width, height
+    levels.add(new Rectangle(200, 100, 100, 50));
+    levels.add(new Rectangle(350, 100, 100, 50));
+    selectedlevel = null; // Initially, nothing is selected
+}
+
+
+
+public void mouseClicked(MouseEvent e) {
+    int mouseX = e.getX();
+    int mouseY = e.getY();
+
+    selectedlevel = null; // Reset selection
+
+    for (Rectangle level : Levels) {
+        if (bottom.contains(mouseX, mouseY)) {
+            selectedlevel = level; // Select the clicked bottom
+            System.out.println("Selected Bottom: " + bottom);
+            break;
+        }
+    }
+
+    repaint(); // Trigger a redraw if selection changes
+}
+
+
+//convert clothes into shirts, bottoms, dresses, shoes, accessories
+//create player heads
+//readd clothes graphics
+//fix multiplayer and two JFrames w/ john's code
+//check log history on home computer
+//add music, cheat codes
+//readd level code
+//redesignate style and trend points
+//add judge calculation 
+//create assignments
+//fix README file
+//fix list in shirts, bottoms, dresses, shoes, accessories
+//add instruction page for the fashion school
+//save file
+//add high score
+//add auto sync
+
