@@ -5,6 +5,7 @@ import com.marinne.wardrobe.model.FriendProfile;
 import com.marinne.wardrobe.model.WardrobeItem;
 import com.marinne.wardrobe.util.ImageCache;
 
+import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -91,19 +92,22 @@ public final class AvatarPanel extends JPanel {
             return;
         }
 
-        Image base = ImageCache.raw(friend.getAvatarImagePath()).getImage();
-        if (base != null) {
-            double aspect = (double) base.getWidth(null) / Math.max(1, base.getHeight(null));
+        ImageIcon baseIcon = ImageCache.raw(friend.getAvatarImagePath());
+        int iconWidth = baseIcon.getIconWidth();
+        int iconHeight = baseIcon.getIconHeight();
+        if (iconWidth > 0 && iconHeight > 0) {
+            double aspect = (double) iconWidth / iconHeight;
             int avatarHeight = (int) (height * 0.82);
-            int avatarWidth = (int) (avatarHeight * aspect);
+            int avatarWidth = Math.max(1, (int) Math.round(avatarHeight * aspect));
             int avatarX = (width - avatarWidth) / 2;
             int avatarY = (height - avatarHeight) / 2 + 5;
-            g2d.drawImage(base, avatarX, avatarY, avatarWidth, avatarHeight, this);
+            g2d.drawImage(baseIcon.getImage(), avatarX, avatarY, avatarWidth, avatarHeight, this);
 
             // Draw clothing overlays.
             outfit.forEach((category, item) -> Optional.ofNullable(LAYER_FRAMES.get(category)).ifPresent(frame -> {
-                Image layer = ImageCache.raw(item.getImagePath()).getImage();
-                if (layer != null) {
+                ImageIcon layerIcon = ImageCache.raw(item.getImagePath());
+                if (layerIcon.getIconWidth() > 0 && layerIcon.getIconHeight() > 0) {
+                    Image layer = layerIcon.getImage();
                     int layerW = (int) (frame.width * avatarWidth);
                     int layerH = (int) (frame.height * avatarHeight);
                     int layerX = avatarX + (int) (frame.x * avatarWidth);
@@ -111,6 +115,9 @@ public final class AvatarPanel extends JPanel {
                     g2d.drawImage(layer, layerX, layerY, layerW, layerH, this);
                 }
             }));
+        } else {
+            g2d.setColor(new Color(110, 100, 90));
+            g2d.drawString("Avatar preview unavailable", 40, height / 2);
         }
 
         // Draw legend boxes for currently applied items.

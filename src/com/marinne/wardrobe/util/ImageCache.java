@@ -14,19 +14,20 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class ImageCache {
 
     private static final Map<String, ImageIcon> CACHE = new ConcurrentHashMap<>();
+    private static final ImageIcon EMPTY_ICON = new ImageIcon();
 
     private ImageCache() {
     }
 
     public static ImageIcon load(String relativePath, int width, int height) {
-        if (relativePath == null) {
-            return new ImageIcon();
+        if (relativePath == null || relativePath.isBlank()) {
+            return EMPTY_ICON;
         }
         String key = relativePath + "::" + width + "x" + height;
         return CACHE.computeIfAbsent(key, k -> {
             ImageIcon icon = resolveIcon(relativePath);
             if (icon.getIconWidth() <= 0 || icon.getImageLoadStatus() != java.awt.MediaTracker.COMPLETE) {
-                return new ImageIcon();
+                return EMPTY_ICON;
             }
             Image scaled = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
             return new ImageIcon(scaled);
@@ -34,10 +35,16 @@ public final class ImageCache {
     }
 
     public static ImageIcon raw(String relativePath) {
+        if (relativePath == null || relativePath.isBlank()) {
+            return EMPTY_ICON;
+        }
         return CACHE.computeIfAbsent(relativePath, ImageCache::resolveIcon);
     }
 
     private static ImageIcon resolveIcon(String relativePath) {
+        if (relativePath == null || relativePath.isBlank()) {
+            return EMPTY_ICON;
+        }
         Path workspace = Path.of(System.getProperty("user.dir"));
         Path direct = workspace.resolve(relativePath);
         if (Files.exists(direct)) {
