@@ -4,6 +4,8 @@ import com.marinne.wardrobe.model.ClothingCategory;
 import com.marinne.wardrobe.model.WardrobeItem;
 
 import java.awt.Color;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashSet;
@@ -92,8 +94,26 @@ public final class RecommendationEngine {
                                                     List<WardrobeItem> candidates) {
         Set<String> anchorTags = new HashSet<>(anchor.getTags());
 
-        return candidates.stream()
+        List<WardrobeItem> relevant = candidates.stream()
                 .filter(item -> item.getCategory() == targetCategory)
+                .collect(Collectors.toList());
+
+        if (relevant.isEmpty()) {
+            return List.of();
+        }
+
+        LocalDateTime newest = relevant.stream()
+                .map(WardrobeItem::getCreatedAt)
+                .filter(Objects::nonNull)
+                .max(LocalDateTime::compareTo)
+                .orElse(null);
+        LocalDateTime oldest = relevant.stream()
+                .map(WardrobeItem::getCreatedAt)
+                .filter(Objects::nonNull)
+                .min(LocalDateTime::compareTo)
+                .orElse(null);
+
+        return relevant.stream()
                 .map(item -> {
                     double score = 0;
                     Set<String> shared = new HashSet<>(anchorTags);
@@ -104,7 +124,7 @@ public final class RecommendationEngine {
                     score += colorCompatibility(anchor.getColorHex(), item.getColorHex());
 
                     // Prioritize recency so newly uploaded items surface quickly.
-                    score += Math.max(0, 10 - candidates.indexOf(item));
+                    score += recencyBoost(item.getCreatedAt(), newest, oldest);
                     return new ScoredItem(item, score);
                 })
                 .sorted((a, b) -> Double.compare(b.score, a.score))
@@ -142,6 +162,17 @@ public final class RecommendationEngine {
         } catch (NumberFormatException e) {
             return 0;
         }
+    }
+
+    private static double recencyBoost(LocalDateTime createdAt, LocalDateTime newest, LocalDateTime oldest) {
+        if (createdAt == null || newest == null || oldest == null) {
+            return 0;
+        }
+        long totalSeconds = Math.max(1, ChronoUnit.SECONDS.between(oldest, newest));
+        long offset = ChronoUnit.SECONDS.between(oldest, createdAt);
+        double normalized = Math.min(1.0, Math.max(0.0, offset / (double) totalSeconds));
+        // Baseline boost of 5 so recent pieces edge out older ones without overwhelming tag matches.
+        return 5 + normalized * 10;
     }
 
     private record ScoredItem(WardrobeItem item, double score) {
